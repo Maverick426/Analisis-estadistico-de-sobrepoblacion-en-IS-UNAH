@@ -1,0 +1,43 @@
+columna.nombre;alias
+Marca.temporal;Marca_temporal
+X.En.que.rango.de.edad.te.encuentras.;Edad
+X.Cual.es.tu.genero.;Genero
+X.Procedes.de.un.lugar..fuera.de.Tegucigalpa.;Procedencia
+Las.horas.que.inviertes.para.llegar.a.la.UNAH.las.clasificarías.como.;Traslado_ UNAH
+X.Posees.una.computadora.en.casa.;Computadora_ permanente
+X.Posees.conexión.a.internet.permanente.;Conexión_ permanente
+X.Consideras.que.tienes.buena.calidad.de.conexión.a.internet.;Calidad_ conexión
+X.Estudiaste.una.carrera.relacionada.con.el.área.de.informática.en.secundaria.;Estudio_ secundaria
+X.Estudias.en.mas.de.una.carrera.universitaria.;Cantidad_ carreras
+X.En.que.rango.se..encuentra.tu.indice.académico.;Rango_ académico
+X.Que.factores.crees.que.te.ayudarían.a.mejorar.tu.rendimiento.académico.;Mejorar_ índice
+X.Has.sido.excelencia.académica.por.lo.menos.alguna.vez.;Exelencia_academica
+X.Has.reprobado.una.o.mas.clases.;Reprobación
+X.Rango.promedio.de.clases.que.matriculas.por.periodo.;Rango_ promedio_ clases
+X.Consideras.que.tienes.un.horario.flexible.;Flexibilidad_ horarios
+X.Tienes.horas.libres.entre.clases.;Horas_ libres
+X.Cómo.considerarías.las.horas.libres.que.tienes.entre.clases.;Estimación_ horas_ libres
+X.Alguna.vez.te.has.quedado.sin.cupo.un.o.mas.de.una.sección.de.clases.;Lista_ espera
+X.Consideras.necesaria.una.mayor.apertura.de.secciones.de.clases.;Mas_ cupos
+X.Como.prefieres.estudiar.;Preferencia_ estudio
+X.Cuantas.horas.dedicas.a.estudiar.a.diario..;Horas_ diarias_ estudio
+X.Cumples.con.tus.obligaciones.académicas.y.horarios.de.estudio.;Disciplina
+X.Aprendes.por.tu.propia.cuenta.a.través.de.otros.recursos.externos.a.la.facultad.de.ingeniería.en.sistemas.;Autodidacta
+X.Has.tenido.atrasos.en.el.transcurso.de.la.carrera.;Demora
+X.Consideras.que.el.entorno.educativo.influye.en.que.existan.retrasos.en.el.avance.de.tu.carrera.;Entorno
+X.Que.te.motivo.a.estudiar.esta.carrera.;Motivo_ estudio
+X.Te.sientes.bien.en.la.carrera.;Seguimiento
+X.Has.considerado.alguna.vez.en.abandonar.la.carrera.de.ingeniería.en.sistemas.;Deserción
+X.Consideras.que.la.carrera.de.ingeniería.en.sistemas.se.encuentra.sobrepoblada.;Sobrepoblación
+X.Consideras.que.el.incremento.de.la.población.de.estudiantes.de.ingeniería.en.sistemas.influye.en.tu.rendimiento.académico.;Aumento _de _la población
+X..Considera.que.la.sobrecarga.laboral.de.los.docentes.influye.en.un.bajo.rendimiento.del.alumno.;Sobrecarga_ laboral
+X.Que.porcentaje.de.docentes.consideras..han.hecho.una.buena.planificación.de.sus.clases..;Planificación
+X.Que.porcentaje.de.docentes.consideras.poseen.buenas.estrategias.educativas.;Estrategias_ educativas
+X.Consideras.que.un.aumento.de.los.recursos.tanto.de.infraestructura.como.de.personal.ayudaran.a.mejorar.el.rendimiento.académico.;Recursos
+X.Consideras.que.las.plataformas.educativas.virtuales.son.importantes.en.la.educación.hoy.en.día..;Plataforma
+Antes.de.la.crisis.mundial.causada.por.el.covid.19..Con.qué.frecuencia.utilizabas.el.campus.virtual.;Frecuencia_ de_ uso
+Con.respecto.a.la.crisis.mundial.causada.por.el.covi.19..Como.ha.aumentado.el.uso.del.campus.virtual.en.tu.caso.;Aumento_ de_ uso
+X.Has.utilizado.algún.LMS.en.tus.clases....Learning.Management.System..en.español..sistema.de.gestión.de.aprendizaje.es.utilizado.para.realizar.cursos.online.y.material.de.capacitación..que.a.su.vez.lleva.un.registro.del.progreso.de.los.estudiantes..;Uso_ lms
+X.Cuál.de.los.siguientes.LMS.haz.utilizado.;lms_ utiliza
+X.Qué.valoración.de.uso.le.das.;Estimación_ lms
+X.Te.gustaría.que.se.implementara.en.la.plataforma.de.LMS..una.ampliación.de.recursos.digitales.;Cambio _LMS

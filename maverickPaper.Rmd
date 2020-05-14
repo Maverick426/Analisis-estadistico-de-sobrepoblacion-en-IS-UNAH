@@ -1,0 +1,742 @@
+---
+title: "Analisis Estadistico de Sobrepoblacion en IS-UNAH"
+author: "Maverick Martinez"
+date: "12/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+### Librerias a utilizar.
+
+library(dplyr)
+library(ggplot2)
+library(caret)
+
+```
+
+## Introduccion
+
+En el trabajo que a continuacion se muestra se estara analizando la informacion que se recolecto con la encuesta aplicada a los
+estudiantes de la Facultad de Ingenieria en Sistemas, esta con el fin de analizar la problematica de sobrepoblacion que se presenta 
+en esta facultad y como los estudiantes se desenvuelven mostrando un buen o mal rendimientio academico, para los docentes y alumnos es
+vital conocer que problemas conlleva esta situacion y de igual forma conocer que estrategias o tecnologias implementar para ayudar a aliviar esta circunstancia.
+
+```{r lectura de datos, echo=TRUE}
+
+Tesis <- read.csv("C:/Users/Junior/Desktop/Tesis_cleaned.csv",header = T,sep = ",",encoding = "UTF-8",na.strings = c(""))
+
+summary(Tesis)
+names(Tesis)
+
+```
+
+Como se puedo apreciar anteriormente, en la recoleccion de informacion se realizaron preguntas en las siguientes categorias:
+
+1. Demograficas.
+2. Acceso a recursos (Computadora e internet)
+3. Registro.
+4. Matricula.
+5. Habitos del estudiante.
+6. Interrupcion del proceso academico.
+7. Motivacion del estudiante.
+8. Sobrepoblacion.
+9. Sobrepoblacion-Docencia.
+10. Inversion economica de la UNAH.
+11. Plataformas virtuales.
+
+## Pasos preliminares.
+
+
+Descargaremos nuestro archivo .csv de la pagina de google forms para darle el siguiente tratamiento.
+
+```{r Pasos, echo=TRUE}
+
+Tesis <- read.csv("C:/Users/Junior/Desktop/Tesis.csv", encoding="UTF-8")
+
+```
+
+El archivo nombre_columnas es donde tenemos nuestras preguntas asociadas a una variable.
+
+```{r, echo=TRUE}
+
+nombre_columnas <- read.csv("nombre_columnas.csv", encoding="UTF8", sep=";")
+my.names <- names(Tesis)
+
+```
+
+Con las siguientes lineas de codigo aliminamos las preguntas que consideramos redundantes o que no aportan informacion de interes.
+
+```{r, echo=TRUE}
+my.names <- my.names[!(my.names %in% c("X"))]
+my.names <- my.names[!(my.names %in% c("X.Cuantas.clases.matriculaste.este.periodo."))]
+my.names <- my.names[!(my.names %in% c("X.En.que.año..académico.te.encuentras."))]
+my.names <- my.names[!(my.names %in% c("X.Consideras.que.la.UNAH.debe.proporcionar.mas.recursos.materiales.a.disposición.de.la.facultad.de.ingeniería.en.sistemas."))]
+my.names <- my.names[!(my.names %in% c("X.Considera.que.los.recursos.económicos.que.invierte.la.UNAH.en.la.facultad.de.ingeniería.en.sistemas.deben.ser.mayores."))]
+my.names <- my.names[!(my.names %in% c("X.Consideras.que.la.UNAH.debe.contratar.mas.docentes.para.la.facultad.de.ingeniería.en.sistemas."))]
+my.names
+
+```
+
+
+Actualizamos Tesis para que tenga solamente las columnas con las que debe de trabajar 
+
+```{r, echo=TRUE}
+Tesis <- Tesis[,my.names]
+
+```
+
+
+Vector que servira para remplazar los names del dataset de Tesis
+
+```{r, echo=TRUE}
+nombre_columnas$alias <- as.character(nombre_columnas$alias)
+```
+
+Cambiamos nombres en el dataframe original
+
+```{r, echo=TRUE}
+names(Tesis) <- nombre_columnas$alias
+names(Tesis)
+head(Tesis)
+
+```
+
+Creamos un nuevo documento .csv con los cambios realizados.
+
+```{r, echo=TRUE}
+
+write.csv(Tesis,"Tesis_cleaned", row.names = F)
+```
+
+Leemos nuestro nuevo documento.
+
+```{r lectura, echo=TRUE}
+Tesis <- read.csv("C:/Users/Junior/Desktop/Tesis_cleaned.csv",header = T,sep = ",",encoding = "UTF-8",na.strings = c(""))
+```
+
+## Tratamiento de valores NA
+
+Realizaremos un recorrido de nuetras variables, para recoger todas las preguntas de una sola vez.
+
+A la variable operacion le asignamos las columnas que presentan valores nulos.
+
+Medimos el tamaño de la operacion y en nuestro df_temp asignamos un data.frame que contendra el valor de los vaores nulos correpondientes a cada columna.
+
+La variable na.Tesis se le asignan sus respectivos valores para posteriormente ser mostrados.
+
+
+```{r Recorrido, echo=TRUE}
+na.Tesis <- c()
+
+for (myname in names(Tesis)){
+  
+  print(myname)
+  
+  en<-as.data.frame(prop.table(table(is.na(Tesis[,myname]))))
+  
+  operacion <- en %>% filter(Var1==TRUE) %>% select(Freq)
+  
+  length(operacion$Freq)
+  
+  df_temp <- data.frame(
+    
+    column.name=c(myname),
+    na.percentage=ifelse(length(operacion$Freq)==0,0,operacion$Freq[1])
+  )
+  na.Tesis <- rbind(na.Tesis,df_temp)
+}
+
+```
+
+Con la siguiente linea de comandos podremos apreciar los procentajes de valores NA existentes en nuetra encuesta.
+
+```{r valoresNA, echo=TRUE}
+
+na.Tesis %>% arrange(-na.percentage) %>% filter(na.percentage > 0) 
+
+```
+
+Como podemos apreciar las variables donde se encuentran porcentajes de valores nulos son las siguientes:
+
+-> Estimacion de horas libres.
+-> Calidad de conexion.
+-> Lms que utiliza.
+-> Estimacion lms.
+
+Si imprimimos los valores de cada variable apreciaremos los valores NA de los que estamos hablando.
+
+Valores NA de la variable Estimacion de horas libres.
+
+```{r obsercacion, echo=TRUE}
+Tesis$Estimaci.n_.horas_.libres
+```
+
+Valores NA de la variable Calidad de conexion.
+
+```{r obsercacion2, echo=TRUE}
+Tesis$Calidad_.conexi.n
+```
+
+Valores NA de la variable Lms que utiliza.
+
+```{r obsercacion3, echo=TRUE}
+Tesis$lms_.utiliza
+```
+
+Valores NA de la variable Estimacion lms.
+
+```{r obsercacion4, echo=TRUE}
+Tesis$Estimaci.n_.lms
+```
+
+Para solucionar esta situacion aplicaremos el siguiente tratamiento a las variables en cuestion.
+
+```{r LimpiesaValoresNA, echo=TRUE}
+
+Tesis[is.na(Tesis$Estimaci.n_.horas_.libres),"Estimaci.n_.horas_.libres"] <- "Ninguna"
+Tesis[is.na(Tesis$Estimaci.n_.lms), "Estimaci.n_.lms"] <- "No utilizó LMS"
+Tesis[is.na(Tesis$Calidad_.conexi.n), "Calidad_.conexi.n"] <-"No"
+Tesis[is.na(Tesis$lms_.utiliza), "lms_.utiliza"] <-"Moodle"
+
+```
+
+Para corroborar que todos estos valores NA fueron tratados revisaremos los datos en el orden correspondiente.
+
+```{r DatosNALimpios, echo=TRUE}
+Tesis$Estimaci.n_.horas_.libres
+Tesis$Calidad_.conexi.n
+Tesis$lms_.utiliza
+Tesis$Estimaci.n_.lms
+
+```
+
+En las tablas anteriores pudimos apreciar que todos los valores NA fueron tratados correctamente. La importacia de tratar estos valores radica en que nuestra encuesta se encontrata mas limpia y legible para futuros analisis.
+
+
+## Nivel descriptivo.
+
+Recordemos diempre que las librerias utilizadas son las que se muestran a continuacion, tambien tengamos presente que estamos trabajando con el documento csv que igualmente se muestra a continuacion.
+
+```{r PasosPreviosND, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(caret)
+### Tesis <- read.csv("C:/Users/Junior/Desktop/Tesis_cleaned.csv",header = T,sep = ",",encoding = "UTF-8",na.strings = c(""))
+
+```
+
+
+Realizaremos una transformacion de la variable Mejorar_indice para tener una mejor lectura de datos.
+
+1. Al dataframe df_mejorar le asignamos nuestras nuevas columnas con las trasnformaciones realizadas.
+
+2. Unimos nuestro nuevo daframe df_mejorar a nuestra encuesta.
+
+3. Borramos de nuestra encuesta la variable sobre la cual realizamos la transformacion esto ya que depuramos la misma con todo el proceso realizado.
+
+4. Si corremos la linea de comandos podremos ver que organizacion posee una mayoria de 107 registros que la aopoyan y otras opciones tiene un total de 23 registros que la apoyan.
+
+
+```{r Transformacion, echo=TRUE}
+
+df_mejorar <- as.data.frame(prop.table(table(Tesis$Mejorar_..ndice))) %>% arrange(-Freq)
+
+df_mejorar[df_mejorar$Var1 %in% c("Mejor Planificaci?n", "Flexibilidad de horarios", "Mejor Planificaci?n;Flexibilidad de horarios", "Mejor planificaci?n"), "Transformacion"] <- "Organizacion"
+
+df_mejorar[df_mejorar$Var1 %in% c("Otros", "Flexibilidad de horarios;Otros", "Mejor Planificaci?n;Otros", "Mejor Planificaci?n;Flexibilidad de horarios;Otros"), "Transformacion"] <- "otras opciones"
+
+df_mejorar <- df_mejorar %>% select(Var1, Transformacion)
+df_mejorar
+Tesis <- left_join(Tesis, df_mejorar, by=c("Mejorar_..ndice"="Var1"))
+Tesis <- Tesis[,!(names(Tesis) %in% c("Mejorar_..ndice"))]
+table(Tesis$Transformacion)
+
+```
+
+
+## Nivel descriptivo, resumen estadistico
+
+Para obtener nuestro resumen estadistico vamos a procesar las proporciones de cada una de nuetras variables teniendo en cuenta las transformaciones que ya hemos realizado, en este caso se obtuvo cada una de las proporciones una por una de la siguiente manera.
+
+```{r Resumen, echo=TRUE}
+
+as.data.frame(prop.table(table(Tesis$Edad))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Genero))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Procedencia))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Traslado_.UNAH))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Computadora_.permanente))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Estudio_.secundaria))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Cantidad_.carreras))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Transformacion))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Exelencia_academica))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Rango_.promedio_.clases))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Flexibilidad_.horarios))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Horas_.libres))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Lista_.espera))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Mas_.cupos))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Preferencia_.estudio))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Horas_.diarias_.estudio))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Disciplina))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Autodidacta))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Demora))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Motivo_.estudio))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Seguimiento))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Sobrecarga_.laboral))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Estrategias_.educativas))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Recursos))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Plataforma))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Frecuencia_.de_.uso))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Aumento_.de_.uso))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Uso_.lms))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$lms_.utiliza))) %>% arrange(-Freq)
+as.data.frame(prop.table(table(Tesis$Cambio._LMS))) %>% arrange(-Freq)
+
+```
+
+
+
+## Analisis de diagramas y valores atipicos encontrados en el nivel descriptivo.
+
+Variable edad: Como se podra analizar con las siguientes lineas de comandos encontramos valores atipocos en la variable Edad,
+se generaron los diagramas correspondientes para concluir acerca de esta situacion. 
+
+```{r edad, echo=TRUE}
+df_edad <- as.data.frame(prop.table(table(Tesis$Edad))) %>% arrange(-Freq)
+boxplot(df_edad$Freq)
+```
+
+Variable Mejorar_indice: Teniendo en cuenta la transformacion realizada anterior mente para esta variable, en las siguientes
+lineas de codigo veremos los diagramas que nos ayudaron a analizar y tratar esta variable. La data no presenta anormalidades.
+
+
+```{r variableTrans, echo=TRUE}
+df_mejorar <- as.data.frame(prop.table(table(Tesis$Transformacion))) %>% arrange(-Freq)
+boxplot(df_mejorar$Freq)
+hist(df_mejorar$Freq)
+qqnorm(df_mejorar$Freq)
+
+```
+
+Variable Rango_.promedio_.clases: esta variable se analizo ya que se penso podria tener valores atipicos, sin embargo, 
+los diagramas generados a continuacion nos ayudaron a confirmar la validez de la data que almacena esta variable.
+
+
+```{r RangoPromedio, echo=TRUE}
+df_Rango <- as.data.frame(prop.table(table(Tesis$Rango_.promedio_.clases))) %>% arrange(-Freq)
+boxplot(df_Rango$Freq)
+hist(df_Rango$Freq)
+qqnorm(df_Rango$Freq)
+
+```
+
+Variable Horas_diarias_estudio: Esta variable se estudio ya que al ser una variable abierta al encuestado para ser llenada
+se penso que posible mente podria mostrar errores en los valores que se llenaron en ella, pero los diagramas muestran todo lo
+contrario ya que verifican que la informacion es correcta.
+
+
+```{r HorasDiarias, echo=TRUE}
+df_Horas <- as.data.frame(prop.table(table(Tesis$Horas_.diarias_.estudio))) %>% arrange(-Freq)
+boxplot(df_Horas$Freq)
+hist(df_Horas$Freq)
+qqnorm(df_Horas$Freq)
+```
+
+Variable Disciplina: Debido a que en esta variable se preguntaba con que frecuiencia se cumplian las obligaciones del estudiante
+y se presento un valor dificl de creer ya que un procentaje muy bajo de los encuestados no cumple con sus obligaciones,
+sin embargo los diagramas nos ayudaron a revisar esta informacion y concluir que la misma es correcta.
+
+
+```{r disciplina, echo=TRUE}
+df_Disciplina <- as.data.frame(prop.table(table(Tesis$Disciplina))) %>% arrange(-Freq)
+boxplot(df_Disciplina$Freq)
+hist(df_Disciplina$Freq)
+qqnorm(df_Disciplina$Freq)
+
+```
+
+Variable Planificacion: Debido a las distintas opciones que presenta esta variable en forma de rango se nos hizo interesante
+de estudiar la misma ya que podrian existir valores atipicos, pero los diagramas confirman que los registros son correctos.
+
+
+```{r Planificacion, echo=TRUE}
+df_Planificaion <- as.data.frame(prop.table(table(Tesis$Planificaci.n))) %>% arrange(-Freq)
+boxplot(df_Planificaion$Freq)
+hist(df_Planificaion$Freq)
+qqnorm(df_Planificaion$Freq)
+
+```
+
+Variable Estrategias educativas: Debido a las distintas opciones que presenta esta variable en forma de rango se nos hizo interesante
+de estudiar la misma ya que podrian existir valores atipicos, pero los diagramas confirman que los registros son correctos.
+
+
+```{r Estrategias, echo=TRUE}
+df_Estrategias <- as.data.frame(prop.table(table(Tesis$Estrategias_.educativas))) %>% arrange(-Freq)
+boxplot(df_Estrategias$Freq)
+hist(df_Estrategias$Freq)
+qqnorm(df_Estrategias$Freq)
+
+```
+
+
+Variable LMS_utilizado: Con respecto a esta variable podemos decir que en las proporciones o distribucion
+mostraba algunos datos sospechos de que fuesen incorrectos, en efecto al analizar los diagramas nos dimos cuenta de
+que la variable posee registros que son atipicos, para solucionar este problema se decidio reformular la pregunta y darle un tratamiento distinto, en especifico se realizo una transformacion de esta variable, dicho proceso no se cargo en este Markdown ya que se deseaba mostrar con los diagramas que se muestran a continuacion los valores atipicos en cuestion.
+
+```{r LMS_utilizado, echo=TRUE}
+df_Uso <- as.data.frame(prop.table(table(Tesis$lms_.utiliza))) %>% arrange(-Freq)
+boxplot(df_Uso$Freq)
+hist(df_Uso$Freq)
+qqnorm(df_Uso$Freq)
+
+```
+
+Variable Cambio_LMS: esta variable nos parecio interesante de corroborar los registros que posee ya que es una de las 
+que sustenta o aporta informacion a nuestra solucion tecnologica, los diagramas muestran que la informacion que almacena
+es correcta.
+
+
+```{r Cambio_LMS, echo=TRUE}
+df_Cambiolms <- as.data.frame(prop.table(table(Tesis$Cambio._LMS))) %>% arrange(-Freq)
+boxplot(df_Cambiolms$Freq)
+hist(df_Cambiolms$Freq)
+qqnorm(df_Cambiolms$Freq)
+
+```
+
+Con respecto a la situacion naacional actual causada por el Covid-19, se le consulto a los encuestados acerca del incremento del uso de plataformas vittuales educativas debido a este virus, la gran mayoria con un 49% indican que la frecuencia de uso de estas tecnologias a aumentado mucho, informacion que se corrobora con los diagramas aplicados a esta data.
+
+```{r covid, echo=TRUE}
+df_covid <- as.data.frame(prop.table(table(Tesis$Aumento_.de_.uso))) %>% arrange(-Freq)
+df_covid
+boxplot(df_covid$Freq)
+hist(df_covid$Freq)
+qqnorm(df_covid$Freq)
+
+```
+
+
+## Nivel Correlacional.
+
+Con las lineas de codigo siguientes veremos el comportamiento de las variables categoricas de interes, en este caso nos interesa visualizar las variables: Sobrepoblacion, aumento de la sobrepoblacion, computadora permanente y conexion permanente.
+
+```{r Visualizar, echo=TRUE}
+
+summary(str(Tesis))
+table(Tesis$Sobrepoblaci.n)
+table(Tesis$Aumento._de._la.poblaci.n)
+table(Tesis$Computadora_.permanente)
+table(Tesis$Conexi.n_.permanente)
+table(summary(Tesis))
+names(Tesis)
+```
+
+Como pudimos apreciar estas variables aportan especial interes en nuestra investigacion, nos brindaron informacion que se correlaciono
+en nuestro documento de investigacion.
+
+## Ahora vamos a correlacionar nuestras variables segun nuestras preguntas de investigacion.
+
+## Primera correlacion
+
+Las personas que poseen computadora poseen internet permanete?
+
+Aqui correlacionamos las variables: Conexion_.permanente vrs Computadora_.permanente.
+
+Utilizamos la funcion ggplot para generar graficos que nos ayuden a interpretar mejor nuestra correlacion.
+
+Con la funcion Chi cuadrada descartaremos o aprobaremos nuestras hipotesis.
+
+H_O Las categorias computadora permanente y conexion permanente son independientes.
+H_A Las categorias computadora permanente y conexion permanente son dependientes.
+
+```{r correlacion1, echo=TRUE}
+prop.table(table(Tesis$Computadora_.permanente,Tesis$Conexi.n_.permanente),2)
+
+ggplot(Tesis)+
+  aes(x= Computadora_.permanente, fill= Conexi.n_.permanente)+
+  geom_bar(position = "stack")+
+  theme(axis.text.x = element_text(angle = 45))
+
+ggplot(Tesis)+
+  aes(x= Computadora_.permanente, fill= Conexi.n_.permanente)+
+  geom_bar(position = "fill")+
+  theme(axis.text.x = element_text(angle = 45))
+
+chisq.test(table(Tesis$Computadora_.permanente,Tesis$Conexi.n_.permanente))
+
+```
+
+Regla: Aceptamos nuestra hipotesis nula cuando el p_value de nuestra prueba es menor a 0.05
+
+Conclusion: segun nuestro p_value aceptamos nuestra hipotesis nula, por lo tanto nuestas variables son independientes, es decir 
+la conexion permanete a internet no depende de que los estudiantes posean una computadora de forma permanente en sus hogares.
+
+Recomendacion: Es de vital importacia que los estudiantes de alguna manera cunten con el recurso de una computadora y el 
+recurso de acceso a internet ya sea en sus hogares, lugares de trabajo etc. Esto ya que muy probablemente necesitaran estos
+recursos para tener un mejor aprovechamiento de sus clases, campus virtual, sesiones de estudios etc.
+
+## Segunda correlacion
+
+El aumento de poblacion tiene un efecto negativo en el rendimiento academico?
+
+Correlacionaremos la vartiable Rango_.academico vrs la variable Aumento_de_la_poblacion, con la siguiente linea de codigos
+realizamos la correlacion mencionada en funcion de columnas.
+
+Funcion ggplot para generar grafico para interpretar mejor la correlacion.
+
+Con la funcion Chi cuadrada descartaremos o aprobaremos nuestras hipotesis.
+
+H_O las categorias rango academico y aumento en la poblacion son independientes.
+H_A las categorias rango academico y aumento en la poblacion son dependientes
+
+
+```{r correlacion2, echo=TRUE}
+prop.table(table(Tesis$Rango_.acad.mico,Tesis$Aumento._de._la.poblaci.n),2)
+
+ggplot(Tesis)+
+  aes(x= Rango_.acad.mico, fill= Aumento._de._la.poblaci.n)+
+  geom_bar(position = "Stack")+
+  theme(axis.text.x = element_text(angle = 45))
+
+  chisq.test(table(Tesis$Rango_.acad.mico,Tesis$Aumento._de._la.poblaci.n))
+
+```
+
+Regla: Aceptamos nuestra hipotesis nula cuando el p_value de nuestra prueba es menor a 0.05
+
+Conclusion: Segun nuestro p_value rechasamos nuestra hipotesis nula, por lo tanto nuestas variables son dependientes, es decir
+las categorias rango academico y aumento de la poblacion estan relacionadas y un aumento de la poblacion de estudiantes refleja un
+efecto negativo en el rendimiento academico, aunque segun los datos obtenidos esto depende del rango en que se encuentre tu
+indice academico.
+
+Recomendacion: La sobrepoblacion de la carrera de ingenieria en sistemas esta comprobada, sin embargo se recomienda al estdiante
+que aun en estas condiciones se esmere y esfuerce para que su rendimiento academico no se vea afectado por esta situacion.
+
+## Correlacion 3
+
+Las condiciones de sobrepoblacion generan problemas de retrazo en la carrera?
+
+Correlacionaremos las variables Demora y sobrepoblacion en funcion de columnas para comprobar o descartar la correlacion.
+
+Funcion ggplot para generar grafico para interpretar mejor la correlacion.
+
+Prueba de chi cuadrada para comprobar la dependecia o independencia de variables.
+
+H_O Las categorias  demora y sobrepoblacion son independientes.
+H_A las categorias demora y sobrepoblacion son dependientes.
+
+
+
+```{r correlacion3, echo=TRUE}
+
+prop.table(table(Tesis$Demora,Tesis$Sobrepoblaci.n),2)
+ggplot(Tesis)+
+  aes(x= Demora, fill= Sobrepoblaci.n)+
+  geom_bar(position = "stack")+
+  theme(axis.text.x = element_text(angle = 45))
+
+chisq.test(table(Tesis$Demora,Tesis$Sobrepoblaci.n))
+
+```
+
+
+Regla: Aceptamos nuestra hipotesis nula cuando el p_value de nuestra prueba es menor a 0.05
+
+Conclusion: segun nuestro p_value rechasamos nuestra hipotesis nula, por lo tanto nuestas variables son dependientes,
+es decir que los retrasos de los estudiantes en la carrera de ingenieria en sistemas se ven relacionados por el sobrepoblamiento de la misma.
+
+Recomendacion: Con relacion a toda la encuesta aplicada ya definimos los problemas que trae con sigo la sobrepoblacion de estudiantes
+como la falta de secciones, reprobaciones u horarios complicados, es necesario que se atiendan las complicaciones causadas
+por la sobrepoblacion para que los estudiantes no se demoren en culminar su carrera.
+
+
+## Cuarta correlacion,  variables numericas con categoricas.
+
+A continuacion correlacionaremos la variable categorica Reprobacion contra la variable numerica Horas diarias de estudio.
+Esto para verificar si las horas diarias de estudio se asocian al fenomeno de la reprobacion.
+
+Analizamos las proporciones de las variables: reprobacion y Horas diarias de estudio
+
+
+```{r correlacion4, echo=TRUE}
+prop.table(table(Tesis$Reprobaci.n))
+prop.table(table(Tesis$Horas_.diarias_.estudio))
+
+```
+
+Con un analisis descriptivo, podremos apreciar que estos datos se alejan de la perpendicular
+lo cual nos da a conocer que la variable Horas diarias de estudio puede tener problemas al momento de correlacionarse con
+la otra variable en cuestion.
+
+```{r analisis, echo=TRUE}
+qqnorm(Tesis$Horas_.diarias_.estudio)
+qqline(Tesis$Horas_.diarias_.estudio)
+```
+
+Prueba de normalidad, como podremos ver esta variable no supera la prueba de normalidad por lo tanto tendremos que frenar 
+el estudio de la correlacion de estas variables.
+
+```{r prueba, echo=TRUE}
+shapiro.test(Tesis$Horas_.diarias_.estudio)
+
+```
+
+
+## Regresiones Logisticas.
+
+En este caso el analasis sera arientado a nuestra variable de respuesta Uso_LMS
+Con la siguiente linea de codigo notamos que hay 31 estudiantes que no han utilizado un LMS
+Esto podria poner en una situacion delicada nuestra propuesta tecnologica.
+
+El conjunto de variables que tomaremos en cuenta para realizar la regresion logistica se muetran a continuacion: 
+
+"Uso_.lms",
+  "Computadora_.permanente",
+  "Conexi.n_.permanente",
+  "Rango_.promedio_.clases",
+  "Horas_.diarias_.estudio",
+  "Disciplina",
+  "Autodidacta",
+  "Plataforma",
+  "Frecuencia_.de_.uso",
+  "Recursos"
+
+```{r Regresiones, echo=TRUE}
+
+table(Tesis$Uso_.lms)
+prop.table(table(Tesis$Uso_.lms))
+
+features <- c(
+  "Uso_.lms",
+  "Computadora_.permanente",
+  "Conexi.n_.permanente",
+  "Rango_.promedio_.clases",
+  "Horas_.diarias_.estudio",
+  "Disciplina",
+  "Autodidacta",
+  "Plataforma",
+  "Frecuencia_.de_.uso",
+  "Recursos"
+)
+
+set <- Tesis[, names(Tesis) %in% features]
+set$Uso_.lms <- as.factor(set$Uso_.lms)
+
+model <- glm(Uso_.lms~., data = set, family = "binomial")
+importances <- varImp(model)
+importances$col <- row.names(importances)
+importances <- importances %>% arrange(-Overall)
+importances
+```
+
+Nuestra regresion logistica anterior nos muestra el peso de importancia de cada variable que intervendra en nuestra variable de respuesta y podemos apreciar que las que mayor peso tienen son las de disciplina, el rango promedio de clases y conexion permanente a internet por lo cual podemos decir que si el estudiante se esfuerza en cumplir con esas variables muy probablemente podra saber manejar un LMs y por ende la implementacion o modificacion de moodle no le sera dificil de asimilar. Esto nos ayuda a seguir dandole marcha a nuestra solucion tecnologica.
+
+## Realizaremos un par de graficos para ver si nuetra regresion logistica tiene sentido, en este caso con las variables de mayor peso:
+Disciplina, rango promedio de clases y conexion permanente a internet.
+
+```{r GraficoDisciplina, echo=TRUE}
+
+ggplot(set)+
+  aes(x= Disciplina, fill= Uso_.lms)+
+  geom_bar(position = "stack")+
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+
+Segun el grafico anterior podremos notar en nuestra grafica que los estudiantes que no usaran el LMS son aquellos que no cumplen con sus deberes, los que en ocasiones cumplen con sus deberes tienen el segundo lugar de probabilidad de usar el LMS
+y los estudiantes que siempre cumplen con sus deberes son los que mas utilizaran el LMS.
+
+```{r GraficoRangoClases, echo=TRUE}
+
+ggplot(set)+
+  aes(x= Rango_.promedio_.clases, fill= Uso_.lms)+
+  geom_bar(position = "stack")+
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+
+En el grafico anterior podemos notar que los estudiantes que matriculan de 4 a 6 clases por periodo son los que probablemente
+le daran un mayor uso al LMS y los que matriculan de 2 a 4 clases estan en segundo lugar de uso del LMS.
+
+```{r conexion, echo=TRUE}
+
+ggplot(set)+
+  aes(x= Conexi.n_.permanente, fill= Uso_.lms)+
+  geom_bar(position = "stack")+
+  theme(axis.text.x = element_text(angle = 45))
+
+```
+
+En el grafico anterior se muestra que los estudiantes que poseen conexion a internet permanente son los que le daran mas uso al LMS.
+
+
+## Solucion Tecnologica.
+
+Nuestra solucion tecnologica consiste en una ampliacion de moodle o del campus virtual, donde estudiantes y docentes tengan a su 
+alcance un recurso que les permita tener una mayor organizacion, recursos externos recomendados por el docente, modelos de entrenamiento
+que permitan a los estudiantes y maestros tener retroalimentacion constante eso y otras funcionalidades.
+
+En la siguiente imagen se aprecia el diagrama completo de nuetra solucion tecnologica, para apreciarlo mejor lo dividiremos en secciones e iremos explicanco cada parte.
+
+!["Diagrama de la solucion tecnologica"](C:/Users/Junior/Desktop/diagramas/diagrama.png)
+
+## Seccion 1.
+
+El objetivo que pretendemos alcanzar con la comunicación de estos 2 servicios, la base de datos UNAH y webAPI, es para consultar información específica del maestro como su asistencia con el objetivo global de presentarle posteriormente recomendaciones en base a esta información.
+
+!["Diagrama seccion 1"](C:/Users/Junior/Desktop/diagramas/seccion1.png)
+
+
+## Seccion 2.
+
+De igual forma para los servicios presentados de Moodle y nuestra WebAPI el objetivo para estos dos componentes es obtener información del LMS como el control de seguimiento do los estudiantes además todos aquellos comentarios y observaciones mediante nuestro aplicativo, para posteriormente toda esta data procesarla y generar las recomendaciones para el maestro.
+
+!["Diagrama seccion 2"](C:/Users/Junior/Desktop/diagramas/seccion2.png)
+
+## Seccion 3.
+
+El objetivo de relacionar estos tres servicios es que al haber consultado toda esa información se podran someter esos datos a un proceso ETL para la transformación de los datos que queremos analizar, para un posterior almacenamiento en una base de datos de tipo no relacional.
+
+!["Diagrama seccion 3"](C:/Users/Junior/Desktop/diagramas/seccion3.png)
+
+## Seccion 4.
+
+Una vez obtenidos los datos y procesados mediante un ETL el objetivo es almacenarlos en una base de datos no relacional y el componente de base de datos relacional lo dejamos para controlar accesos y ciertas configuraciones de nuestra WebAPI y nuestra Api de recomendaciones.
+
+!["Diagrama seccion 4"](C:/Users/Junior/Desktop/diagramas/seccion4.png)
+
+## Seccion 5.
+
+El objetivo de la relación de estos servicios es que toda la informacion se pueda almacenar en un cluster de servidores con configuración Hadoop, además de eso pretendemos que nuestros servidores sean de tipo storage para que permitan almacenar y consultar una gran cantidad de datos, almacenar rutinas de modelos entrenados que nos permitirá mediante minería de datos estudiantil y análisis predictivos generar las recomendaciones y consultarlas a traves de las bases de datos de nuestro aplicativo.
+
+!["Diagrama seccion 5"](C:/Users/Junior/Desktop/diagramas/seccion5.png)
+
+## Seccion 6.
+
+El objetivo de relación de estos servicios es que una vez que ya tengamos generadas todas aquellas recomendaciones las consultaremos mediante nuestro aplicativo de recomendaciones de mejores prácticas para ser presentados al usuario en este caso los maestros.
+
+!["Diagrama seccion 6"](C:/Users/Junior/Desktop/diagramas/seccion6.png)
+
+
+## Seccion 7.
+
+Por ultimo tenemos la relación entre estos servicios con el objetivo de que nuestro aplicativo le presente las recomendaciones de mejores prácticas al usuario maestro ecerca de cómo mejorar la dinámica de la clase, para que le sirva como un tipo de retroalimentación que le permitirá al docente cambiar la forma de como presentar mejor los contenidos, sugerir nuevos mecanismos o implementar prácticas que mejoren las condiciones de la clase, esto con el fin de mejorar el aprovechamiento academico del estudiante.
+
+!["Diagrama seccion 7"](C:/Users/Junior/Desktop/diagramas/seccion7.png)
+
+
+Con esto se concluye el analisis estadistico realizado y la explicacion de la solucion tecnologia que consiste en una ampliacion de moodle.
+
+Muchas Grascias por su Atencion.!!!!!!!
+
+
+
+
+
+
+
+
+
+
+
